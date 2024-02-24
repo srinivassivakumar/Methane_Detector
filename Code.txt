@@ -1,0 +1,99 @@
+#include <LiquidCrystal.h>
+int rs=8;int en=9;int d4=4;int d5=5;int d6=6;int d7=7;	//pins for display
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);				//assingning Pins for display
+
+int tempPin=A0;	//this pin will pick Output value from temp sensor
+int gasPin=A1;	//this pin will pick Output value from gas sensor
+
+int tempInp;	//the temp sensor output will be assigned this variable
+int gasInp;		//the gas sensor output will be assigned this variable
+
+double temp;	//this variable is assigned to actual temperature measured
+double gas;		//this variable is assigned to actual gas/smoke density measured
+
+double tempSafetyLim=50;	//setting temperature safety limit
+double gasSafetyLim=55;		//setting gas density safety limit
+
+int tempLED=11;		//pin for temperature warning led
+int gasLED=12;		//pin for gas desnsity warning led
+int buzzAlarm=13;	//pin for buzzer alarm
+
+double tempLast;
+double gasLast;
+
+void setup()
+{
+  pinMode(tempLED,OUTPUT);		//sets pin tempLED as an OUTPUT pin
+  pinMode(gasLED,OUTPUT);		//sets pin gasLED as an OUTPUT pin
+  pinMode(buzzAlarm,OUTPUT);	//sets pin buzzALarm as an OUTPUT pin
+  
+  pinMode(tempPin,INPUT);		//sets pin tempPin as an INPUT pin
+  pinMode(gasPin,INPUT);		//sets pin gasPin as an INPUT pin
+  
+  Serial.begin(9600);	//starts serial monitor
+  lcd.begin(16, 2);		//sets up lcd display with 16 columns, 2 rows
+}
+
+void loop()
+{
+  tempInp = analogRead(tempPin);	//this assigns the variable tempInp to temp sensor output
+  temp = (double)tempInp / 1024;	//this converts the voltage value to actual measurement
+  temp = temp * 5;
+  temp = temp - 0.5;
+  temp = temp * 100;
+  
+  gasInp = analogRead(gasPin);		//this assigns the variable gasInp to temp sensor output
+  gas = (double)gasInp;				//this can be changed as per requirement and exact gas sensor
+
+  
+  if (gas!=gasLast || temp!=tempLast)
+  {
+    lcd.clear();
+  }
+  
+  tempLast = temp;		//stores temperature from previous loop execution
+  gasLast = gas;		//stores gas value from previous loop execution
+  
+  lcd.setCursor(0,0);		//brings LCD cursor to first column first row
+  lcd.print("Temp:");		
+  lcd.print(temp);
+  lcd.print("deg C");
+  lcd.setCursor(0,1);       //brings LCD cursor to first column second row    
+  lcd.print("Gas Dense:");
+  lcd.print(gas);
+  
+  if (temp>tempSafetyLim)		//if temperature is larger than limit then
+  {
+    digitalWrite(tempLED,HIGH);	//switch ON the red LED
+  }
+  else							//else, i.e., if temperature is safe then
+  {
+    digitalWrite(tempLED,LOW);	//switch OFF the red LED
+  }
+  
+  if (gas>gasSafetyLim)			//if gas density is larger than limit then
+  {
+    digitalWrite(gasLED,HIGH);	//switch ON the green LED
+  }
+  else							//else, i.e., if gas density is safe then
+  {
+    digitalWrite(gasLED,LOW);	//switch OFF the green LED
+  }
+  
+  if (temp>tempSafetyLim || gas>gasSafetyLim)	//if conditions are not safe then
+  {
+    digitalWrite(buzzAlarm,HIGH);				//switch ON the buzzer Alarm
+  }
+  else											//else, i.e., if conditions are safe then
+  {
+    digitalWrite(buzzAlarm,LOW);				//switch OFF the buzzer Alarm
+  }
+  
+  Serial.print("Temperature: ");		//Send data to serial monitor
+  Serial.print(temp);
+  Serial.print("deg C\t");
+  Serial.print("Smoke/Gas Density: ");
+  Serial.println(gas);
+  
+  delay(500);
+ }
